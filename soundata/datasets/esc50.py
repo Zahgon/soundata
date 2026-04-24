@@ -127,9 +127,7 @@ class Clip(core.Clip):
     """
 
     def __init__(self, clip_id, data_home, dataset_name, index, metadata):
-        super().__init__(clip_id, data_home, dataset_name, index, metadata)
-
-        self.audio_path = self.get_path("audio")
+        raise NotImplementedError
 
     @property
     def audio(self) -> Optional[Tuple[np.ndarray, float]]:
@@ -140,7 +138,7 @@ class Clip(core.Clip):
             * float - sample rate
 
         """
-        return load_audio(self.audio_path)
+        pass
 
     @property
     def filename(self):
@@ -149,7 +147,7 @@ class Clip(core.Clip):
         Returns:
             * str - clip filename
         """
-        return self._clip_metadata.get("filename")
+        pass
 
     @property
     def fold(self):
@@ -159,7 +157,7 @@ class Clip(core.Clip):
             * int - index of the cross-validation fold the clip belongs to
 
         """
-        return self._clip_metadata.get("fold")
+        pass
 
     @property
     def target(self):
@@ -169,7 +167,7 @@ class Clip(core.Clip):
             * int - clip class in numeric format
 
         """
-        return self._clip_metadata.get("target")
+        pass
 
     @property
     def category(self):
@@ -179,7 +177,7 @@ class Clip(core.Clip):
             * str - clip class in string format, i.e., label
 
         """
-        return self._clip_metadata.get("category")
+        pass
 
     @property
     def esc10(self):
@@ -189,7 +187,7 @@ class Clip(core.Clip):
             * bool - True if the clip belongs to the ESC-10 subset (10 selected classes, CC BY license)
 
         """
-        return self._clip_metadata.get("esc10")
+        pass
 
     @property
     def src_file(self):
@@ -199,7 +197,7 @@ class Clip(core.Clip):
             * str - freesound ID of the original file from which the clip was taken
 
         """
-        return self._clip_metadata.get("src_file")
+        pass
 
     @property
     def take(self):
@@ -209,7 +207,7 @@ class Clip(core.Clip):
             * str - letter disambiguating between different fragments from the same Freesound clip (e.g., "A", "B", etc.)
 
         """
-        return self._clip_metadata.get("take")
+        pass
 
     @property
     def tags(self):
@@ -220,9 +218,7 @@ class Clip(core.Clip):
             * float - sample rate
 
         """
-        return annotations.Tags(
-            [self._clip_metadata.get("category")], "open", np.array([1.0])
-        )
+        pass
 
 
 @io.coerce_to_bytes_io
@@ -239,8 +235,7 @@ def load_audio(fhandle: BinaryIO, sr=None) -> Tuple[np.ndarray, float]:
         * float - The sample rate of the audio file
 
     """
-    audio, sr = librosa.load(fhandle, sr=sr, mono=True)
-    return audio, sr
+    pass
 
 
 @core.docstring_inherit(core.Dataset)
@@ -248,47 +243,12 @@ class Dataset(core.Dataset):
     """The ESC-50 dataset"""
 
     def __init__(self, data_home=None, version="default"):
-        super().__init__(
-            data_home,
-            version,
-            name="esc50",
-            clip_class=Clip,
-            bibtex=BIBTEX,
-            indexes=INDEXES,
-            remotes=REMOTES,
-            license_info=LICENSE_INFO,
-        )
+        raise NotImplementedError
 
     @core.copy_docs(load_audio)
     def load_audio(self, *args, **kwargs):
-        return load_audio(*args, **kwargs)
+        pass
 
     @core.cached_property
     def _metadata(self):
-        metadata_path = os.path.join(self.data_home, "meta", "esc50.csv")
-
-        if not os.path.exists(metadata_path):
-            raise FileNotFoundError("Metadata not found. Did you run .download()?")
-
-        with open(metadata_path, "r") as fhandle:
-            reader = csv.reader(fhandle, delimiter=",")
-            raw_data = []
-            for line in reader:
-                if line[0] != "filename":
-                    raw_data.append(line)
-
-        metadata_index = {}
-        for line in raw_data:
-            clip_id = line[0].replace(".wav", "")
-
-            metadata_index[clip_id] = {
-                "filename": line[0],
-                "fold": int(line[1]),
-                "target": int(line[2]),
-                "category": line[3],
-                "esc10": True if line[4] == "True" else False,
-                "src_file": line[5],
-                "take": line[6],
-            }
-
-        return metadata_index
+        pass

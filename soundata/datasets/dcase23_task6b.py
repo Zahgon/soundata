@@ -178,9 +178,7 @@ class Clip(core.Clip):
     """
 
     def __init__(self, clip_id, data_home, dataset_name, index, metadata):
-        super().__init__(clip_id, data_home, dataset_name, index, metadata)
-
-        self.audio_path = self.get_path("audio")
+        raise NotImplementedError
 
     @property
     def audio(self) -> Optional[Tuple[np.ndarray, float]]:
@@ -191,7 +189,7 @@ class Clip(core.Clip):
             * float - sample rate
 
         """
-        return load_audio(self.audio_path)
+        pass
 
     @property
     def file_name(self):
@@ -200,7 +198,7 @@ class Clip(core.Clip):
         Returns:
             * str - Name of the file.
         """
-        return self._clip_metadata.get("file_name")
+        pass
 
     @property
     def keywords(self):
@@ -209,7 +207,7 @@ class Clip(core.Clip):
         Returns:
             * str - Keywords for the clip.
         """
-        return self._clip_metadata.get("keywords")
+        pass
 
     @property
     def sound_id(self):
@@ -218,7 +216,7 @@ class Clip(core.Clip):
         Returns:
             * str - Sound ID.
         """
-        return self._clip_metadata.get("sound_id")
+        pass
 
     @property
     def sound_link(self):
@@ -227,7 +225,7 @@ class Clip(core.Clip):
         Returns:
             * str - URL of the sound.
         """
-        return self._clip_metadata.get("sound_link")
+        pass
 
     @property
     def start_end_samples(self):
@@ -236,7 +234,7 @@ class Clip(core.Clip):
         Returns:
             * tuple - Start and end samples.
         """
-        return self._clip_metadata.get("start_end_samples")
+        pass
 
     @property
     def manufacturer(self):
@@ -245,7 +243,7 @@ class Clip(core.Clip):
         Returns:
             * str - Manufacturer name.
         """
-        return self._clip_metadata.get("manufacturer")
+        pass
 
     @property
     def license(self):
@@ -254,7 +252,7 @@ class Clip(core.Clip):
         Returns:
             * str - License information.
         """
-        return self._clip_metadata.get("license")
+        pass
 
 
 @io.coerce_to_bytes_io
@@ -271,8 +269,7 @@ def load_audio(fhandle: BinaryIO, sr=None) -> Tuple[np.ndarray, float]:
         * float - The sample rate of the audio file
 
     """
-    audio, sr = librosa.load(fhandle, sr=sr, mono=False)
-    return audio, sr
+    pass
 
 
 @core.docstring_inherit(core.Dataset)
@@ -282,75 +279,13 @@ class Dataset(core.Dataset):
     """
 
     def __init__(self, data_home=None, version="default"):
-        super().__init__(
-            data_home,
-            version,
-            name="dcase23_task6b",
-            clip_class=Clip,
-            bibtex=BIBTEX,
-            indexes=INDEXES,
-            remotes=REMOTES,
-            license_info=LICENSE_INFO,
-        )
+        raise NotImplementedError
 
     @core.copy_docs(load_audio)
     def load_audio(self, *args, **kwargs):
-        return load_audio(*args, **kwargs)
+        pass
 
     @core.cached_property
     def _metadata(self):
         # Define all the metadata and caption files for both datasets
-        files = {
-            "clotho_metadata_development.csv": "metadata",
-            "clotho_metadata_evaluation.csv": "metadata",
-            "clotho_metadata_validation.csv": "metadata",
-            "clotho_captions_development.csv": "captions",
-            "clotho_captions_evaluation.csv": "captions",
-            "clotho_captions_validation.csv": "captions",
-            "retrieval_audio_metadata.csv": "metadata",
-        }
-        combined_data = {}
-
-        # Process each file
-        for file_name, file_type in files.items():
-            file_path = os.path.join(self.data_home, file_name)
-            with open(file_path, encoding="ISO-8859-1") as csv_file:
-                csv_reader = csv.DictReader(csv_file, delimiter=",")
-                for row in csv_reader:
-                    file_key = row["file_name"].replace(".wav", "")
-                    if "development" in file_name:
-                        file_key = "development/" + file_key
-                    elif "validation" in file_name:
-                        file_key = "validation/" + file_key
-                    elif "evaluation" in file_name:
-                        file_key = "evaluation/" + file_key
-                    elif "retrieval" in file_name:
-                        file_key = "test/" + file_key
-                    if file_key not in combined_data:
-                        combined_data[file_key] = {
-                            "file_name": "",
-                            "keywords": "",
-                            "sound_id": "",
-                            "sound_link": "",
-                            "start_end_samples": "",
-                            "manufacturer": "",
-                            "license": "",
-                            "captions": [],
-                        }
-                    if file_type == "metadata":
-                        combined_data[file_key].update(
-                            {
-                                "file_name": file_key,
-                                "keywords": row["keywords"],
-                                "sound_id": row["sound_id"],
-                                "sound_link": row["sound_link"],
-                                "start_end_samples": row["start_end_samples"],
-                                "manufacturer": row["manufacturer"],
-                                "license": row["license"],
-                            }
-                        )
-                    elif file_type == "captions":
-                        combined_data[file_key]["captions"] = [
-                            row[key] for key in row if key != "file_name"
-                        ]
-        return combined_data
+        pass

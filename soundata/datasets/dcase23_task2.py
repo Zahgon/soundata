@@ -246,8 +246,7 @@ class Clip(core.Clip):
     """
 
     def __init__(self, clip_id, data_home, dataset_name, index, metadata):
-        super().__init__(clip_id, data_home, dataset_name, index, metadata)
-        self.audio_path = self.get_path("audio")
+        raise NotImplementedError
 
     @property
     def audio(self) -> Optional[Tuple[np.ndarray, float]]:
@@ -257,7 +256,7 @@ class Clip(core.Clip):
             * np.ndarray - audio signal
             * float - sample rate
         """
-        return load_audio(self.audio_path)
+        pass
 
     @property
     def file_name(self):
@@ -268,7 +267,7 @@ class Clip(core.Clip):
         Returns:
             * str - name of the clip file
         """
-        return self._clip_metadata.get("file_name")
+        pass
 
     @property
     def d1p(self):
@@ -277,7 +276,7 @@ class Clip(core.Clip):
         Returns:
             * str - first domain shift parameter of the clip
         """
-        return self._clip_metadata.get("d1p")
+        pass
 
     @property
     def d1v(self):
@@ -286,7 +285,7 @@ class Clip(core.Clip):
         Returns:
             * str - first domain shift value of the clip
         """
-        return self._clip_metadata.get("d1v")
+        pass
 
 
 @io.coerce_to_bytes_io
@@ -305,8 +304,7 @@ def load_audio(fhandle: BinaryIO, sr=44100) -> Tuple[np.ndarray, float]:
         * float - The sample rate of the audio file
 
     """
-    audio, sr = librosa.load(fhandle, sr=sr, mono=True)
-    return audio, sr
+    pass
 
 
 @core.docstring_inherit(core.Dataset)
@@ -316,85 +314,12 @@ class Dataset(core.Dataset):
     """
 
     def __init__(self, data_home=None, version="default"):
-        super().__init__(
-            data_home,
-            version,
-            name="dcase23_task2",
-            clip_class=Clip,
-            bibtex=BIBTEX,
-            indexes=INDEXES,
-            remotes=REMOTES,
-            license_info=LICENSE_INFO,
-        )
+        raise NotImplementedError
 
     @core.copy_docs(load_audio)
     def load_audio(self, *args, **kwargs):
-        return load_audio(*args, **kwargs)
+        pass
 
     @core.cached_property
     def _metadata(self):
-        machines_dev = [
-            "fan",
-            "gearbox",
-            "bearing",
-            "slider",
-            "ToyCar",
-            "ToyTrain",
-            "valve",
-        ]
-        machines_add_train = [
-            "Vacuum",
-            "ToyTank",
-            "ToyNscale",
-            "ToyDrone",
-            "bandsaw",
-            "grinder",
-            "shaker",
-        ]
-
-        metadata_index = {}
-
-        # Loop through each machine type for dev_data
-        for machine in machines_dev:
-            # Paths for metadata files
-            metadata_dev_path = os.path.join(
-                self.data_home, "7882613", machine, "attributes_00.csv"
-            )
-            # Check for file existence
-            if not os.path.exists(metadata_dev_path):
-                raise FileNotFoundError(
-                    f"Development metadata for {machine} not found. Did you run .download()?"
-                )
-
-            # Parsing development metadata for each machine
-            with open(metadata_dev_path, "r") as f:
-                reader = csv.reader(f, delimiter=",")
-                next(reader)  # skipping header
-                for row in reader:
-                    key = row[0].split("/")[-1].replace(".wav", "")
-                    metadata_index[key] = {
-                        "file_name": row[0],
-                        "d1p": row[1],
-                        "d1v": row[2],
-                    }
-
-        # Loop through each machine type for add_train_data
-        for machine in machines_add_train:
-            # Paths for metadata files
-            metadata_add_train_path = os.path.join(
-                self.data_home, "7830345", machine, "attributes_00.csv"
-            )
-
-            # Parsing additional training metadata for each machine
-            with open(metadata_add_train_path, "r") as f:
-                reader = csv.reader(f, delimiter=",")
-                next(reader)  # skipping header
-                for row in reader:
-                    key = row[0].split("/")[-1].replace(".wav", "")
-                    metadata_index[key] = {
-                        "file_name": row[0],
-                        "d1p": row[1],
-                        "d1v": row[2],
-                    }
-
-        return metadata_index
+        pass

@@ -32,11 +32,7 @@ class RemoteFileMetadata(object):
     def __init__(
         self, filename, url, checksum, destination_dir=None, unpack_directories=None
     ):
-        self.filename = filename
-        self.url = url
-        self.checksum = checksum
-        self.destination_dir = destination_dir
-        self.unpack_directories = unpack_directories
+        raise NotImplementedError
 
 
 def downloader(
@@ -71,112 +67,14 @@ def downloader(
         cleanup (bool):
             Whether to delete the zip/tar file after extracting.
     """
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-
-    if not index:
-        raise ValueError("Index must be specified.")
-
-    if cleanup:
-        logging.warning(
-            "Zip and tar files will be deleted after they are uncompressed. "
-            + "If you download this dataset again, it will overwrite existing files, even if force_overwrite=False"
-        )
-
-    if index.remote:
-        if remotes is None:
-            remotes = {}
-        remotes["index"] = index.remote
-
-    # if partial download is specified, use it. Otherwise, use the
-    # partial download specified by the index.
-    partial_download = partial_download if partial_download else index.partial_download
-
-    if remotes is not None:
-        if partial_download is not None:
-            # check the keys in partial_download are in the download dict
-            if not isinstance(partial_download, list) or any(
-                [k not in remotes for k in partial_download]
-            ):
-                raise ValueError(
-                    "partial_download must be a list which is a subset of {}, but got {}".format(
-                        list(remotes.keys()), partial_download
-                    )
-                )
-            objs_to_download = partial_download
-            if "index" in remotes.keys():
-                objs_to_download.append("index")
-        else:
-            objs_to_download = list(remotes.keys())
-
-        if "index" in objs_to_download and len(objs_to_download) > 1:
-            logging.info(
-                "Downloading {}. Index is being stored in {}, and the rest of files in {}".format(
-                    objs_to_download, index.indexes_dir, save_dir
-                )
-            )
-        elif "index" in objs_to_download and len(objs_to_download) == 1:
-            logging.info(
-                "Downloading {}. Index is being stored in {}".format(
-                    objs_to_download, index.indexes_dir
-                )
-            )
-        else:
-            logging.info("Downloading {} to {}".format(objs_to_download, save_dir))
-
-        for k in objs_to_download:
-            if isinstance(remotes[k], list):
-                if all([remote.filename[-4:-2] == ".z" for remote in remotes[k]]):
-                    download_multipart_zip(
-                        remotes[k], save_dir, force_overwrite, cleanup
-                    )
-                else:
-                    raise NotImplementedError("Only multipart zip supported.")
-
-            else:
-                logging.info("[{}] downloading {}".format(k, remotes[k].filename))
-                extension = os.path.splitext(remotes[k].filename)[-1]
-                if ".zip" in extension:
-                    download_zip_file(remotes[k], save_dir, force_overwrite, cleanup)
-                elif ".gz" in extension or ".tar" in extension or ".bz2" in extension:
-                    download_tar_file(remotes[k], save_dir, force_overwrite, cleanup)
-                elif ".7z" in extension:
-                    download_7z_file(remotes[k], save_dir, force_overwrite, cleanup)
-                else:
-                    download_from_remote(remotes[k], save_dir, force_overwrite)
-
-                if remotes[k].unpack_directories:
-                    for src_dir in remotes[k].unpack_directories:
-                        # path to destination directory
-                        destination_dir = (
-                            os.path.join(save_dir, remotes[k].destination_dir)
-                            if remotes[k].destination_dir
-                            else save_dir
-                        )
-                        # path to directory to unpack
-                        source_dir = os.path.join(destination_dir, src_dir)
-
-                        if not os.path.exists(source_dir):
-                            logging.info(
-                                "Data not downloaded, because it probably already exists on your computer. "
-                                + "Run .validate() to check, or rerun with force_overwrite=True to delete any "
-                                + "existing files and download from scratch"
-                            )
-                            return
-
-                        move_directory_contents(source_dir, destination_dir)
-
-    if info_message is not None:
-        logging.info(info_message.format(save_dir))
+    pass
 
 
 class DownloadProgressBar(tqdm):
     """Wrap tqdm to show download progress"""
 
     def update_to(self, b=1, bsize=1, tsize=None):
-        if tsize is not None:
-            self.total = tsize
-        self.update(b * bsize - self.n)
+        pass
 
 
 def download_multipart_zip(zip_remotes, save_dir, force_overwrite, cleanup):
@@ -194,19 +92,7 @@ def download_multipart_zip(zip_remotes, save_dir, force_overwrite, cleanup):
             If True, remove zipfile after unziping
 
     """
-    for l in range(len(zip_remotes)):
-        download_from_remote(zip_remotes[l], save_dir, force_overwrite)
-    zip_path = os.path.join(
-        save_dir,
-        next((part.filename for part in zip_remotes if ".zip" in part.filename), None),
-    )
-    out_path = zip_path.replace(".zip", "_single.zip")
-    subprocess.run(["zip", "-s", "0", zip_path, "--out", out_path])
-    if cleanup:
-        for l in range(len(zip_remotes)):
-            zip_path = os.path.join(save_dir, zip_remotes[l].filename)
-            os.remove(zip_path)
-    unzip(out_path, cleanup=cleanup)
+    pass
 
 
 def download_from_remote(remote, save_dir, force_overwrite):
@@ -230,58 +116,7 @@ def download_from_remote(remote, save_dir, force_overwrite):
         str: Full path of the created file.
 
     """
-    if remote.destination_dir is None:
-        download_dir = save_dir
-    else:
-        download_dir = os.path.join(save_dir, remote.destination_dir)
-
-    if not os.path.exists(download_dir):
-        os.makedirs(download_dir)
-
-    download_path = os.path.join(download_dir, remote.filename)
-
-    if not os.path.exists(download_path) or force_overwrite:
-        # if we got here, we want to overwrite any existing file
-        if os.path.exists(download_path):
-            os.remove(download_path)
-
-        # If file doesn't exist or we want to overwrite, download it
-        with DownloadProgressBar(
-            unit="B", unit_scale=True, unit_divisor=1024, miniters=1
-        ) as t:
-            try:
-                urllib.request.urlretrieve(
-                    remote.url,
-                    filename=download_path,
-                    reporthook=t.update_to,
-                    data=None,
-                )
-            except Exception as exc:
-                error_msg = """
-                            soundata failed to download the dataset from {}!
-                            Please try again in a few minutes.
-                            If this error persists, please raise an issue at
-                            https://github.com/soundata/soundata,
-                            and tag it with 'broken-link'.
-                            """.format(
-                    remote.url
-                )
-                logging.error(error_msg)
-                raise exc
-    else:
-        logging.info(
-            "{} already exists and will not be downloaded. ".format(download_path)
-            + "Rerun with force_overwrite=True to delete this file and force the download."
-        )
-
-    checksum = md5(download_path)
-    if remote.checksum != checksum:
-        raise IOError(
-            "{} has an MD5 checksum ({}) "
-            "differing from expected ({}), "
-            "file may be corrupted.".format(download_path, checksum, remote.checksum)
-        )
-    return download_path
+    pass
 
 
 def download_zip_file(zip_remote, save_dir, force_overwrite, cleanup):
@@ -298,8 +133,7 @@ def download_zip_file(zip_remote, save_dir, force_overwrite, cleanup):
             If True, remove zipfile after unziping
 
     """
-    zip_download_path = download_from_remote(zip_remote, save_dir, force_overwrite)
-    unzip(zip_download_path, cleanup=cleanup)
+    pass
 
 
 def extractall_unicode(zfile, out_dir):
@@ -312,23 +146,7 @@ def extractall_unicode(zfile, out_dir):
         out_dir (str): Output folder
 
     """
-    for m in tqdm(zfile.infolist(), desc="Extracting", unit="file"):
-        data = zfile.read(m)  # extract zipped data into memory
-
-        try:
-            decoded_name = m.filename.encode("cp437").decode()
-        except UnicodeEncodeError:
-            decoded_name = m.filename
-
-        disk_file_name = os.path.join(out_dir, decoded_name)
-
-        dir_name = os.path.dirname(disk_file_name)
-        if not os.path.exists(dir_name):
-            os.makedirs(dir_name)
-
-        if not os.path.isdir(disk_file_name):
-            with open(disk_file_name, "wb") as fd:
-                fd.write(data)
+    pass
 
 
 def unzip(zip_path, cleanup):
@@ -339,11 +157,7 @@ def unzip(zip_path, cleanup):
         cleanup (bool): If True, remove zipfile after unzipping
 
     """
-    zfile = zipfile.ZipFile(zip_path, "r")
-    extractall_unicode(zfile, os.path.dirname(zip_path))
-    zfile.close()
-    if cleanup:
-        os.remove(zip_path)
+    pass
 
 
 def download_7z_file(tar_remote, save_dir, force_overwrite, cleanup):
@@ -356,8 +170,7 @@ def download_7z_file(tar_remote, save_dir, force_overwrite, cleanup):
         cleanup (bool): If True, remove tarfile after untarring
 
     """
-    _7z_download_path = download_from_remote(tar_remote, save_dir, force_overwrite)
-    un7z(_7z_download_path, cleanup=cleanup)
+    pass
 
 
 def un7z(sevenz_path, cleanup):
@@ -368,10 +181,7 @@ def un7z(sevenz_path, cleanup):
         cleanup (bool): If True, remove 7z file after extraction
 
     """
-    with py7zr.SevenZipFile(sevenz_path, mode="r") as z:
-        z.extractall(path=os.path.dirname(sevenz_path))
-    if cleanup:
-        os.remove(sevenz_path)
+    pass
 
 
 def download_tar_file(tar_remote, save_dir, force_overwrite, cleanup):
@@ -384,8 +194,7 @@ def download_tar_file(tar_remote, save_dir, force_overwrite, cleanup):
         cleanup (bool): If True, remove tarfile after untarring
 
     """
-    tar_download_path = download_from_remote(tar_remote, save_dir, force_overwrite)
-    untar(tar_download_path, cleanup=cleanup)
+    pass
 
 
 def untar(tar_path, cleanup):
@@ -396,11 +205,7 @@ def untar(tar_path, cleanup):
         cleanup (bool): If True, remove tarfile after untarring
 
     """
-    tfile = tarfile.open(tar_path, "r")
-    tfile.extractall(os.path.dirname(tar_path))
-    tfile.close()
-    if cleanup:
-        os.remove(tar_path)
+    pass
 
 
 def move_directory_contents(source_dir, target_dir):
@@ -411,16 +216,4 @@ def move_directory_contents(source_dir, target_dir):
         target_dir (str): path to target directory
 
     """
-    directory_contents = glob.glob(os.path.join(source_dir, "*"))
-    for fpath in directory_contents:
-        target_path = os.path.join(target_dir, os.path.basename(fpath))
-        if os.path.exists(target_path):
-            logging.info(
-                "{} already exists. Run with force_overwrite=True to download from scratch".format(
-                    target_path
-                )
-            )
-            continue
-        shutil.move(fpath, target_dir)
-
-    shutil.rmtree(source_dir)
+    pass

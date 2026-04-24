@@ -171,45 +171,7 @@ class TAU2019_SpatialEvents(annotations.SpatialEvents):
         labels_unit,
         confidence=None,
     ):
-        super().__init__(
-            None,
-            intervals_unit,
-            None,
-            elevations_unit,
-            None,
-            azimuths_unit,
-            None,
-            distances_unit,
-            labels,
-            labels_unit,
-            clip_number_index=None,
-            time_step=None,
-            confidence=None,
-        )
-
-        annotations.validate_array_like(elevations, np.ndarray, float)
-        annotations.validate_array_like(azimuths, np.ndarray, float)
-        annotations.validate_array_like(distances, np.ndarray, float)
-        annotations.validate_lengths_equal(
-            [intervals, elevations, azimuths, distances, labels, confidence]
-        )
-        validate_locations(
-            np.concatenate(
-                [
-                    elevations[:, np.newaxis],
-                    azimuths[:, np.newaxis],
-                    distances[:, np.newaxis],
-                ],
-                axis=1,
-            )
-        )
-        self.intervals = intervals
-        self.elevations = elevations
-        self.azimuths = azimuths
-        self.distances = distances
-        self.elevations_unit = elevations_unit
-        self.azimuths_unit = azimuths_unit
-        self.distances_unit = distances_unit
+        raise NotImplementedError
 
 
 class Clip(core.Clip):
@@ -235,18 +197,7 @@ class Clip(core.Clip):
         index,
         metadata,
     ):
-        super().__init__(
-            clip_id,
-            data_home,
-            dataset_name,
-            index,
-            metadata,
-        )
-
-        self.audio_path = self.get_path("audio")
-        self.csv_path = self.get_path("events")
-        self.format = self._clip_metadata.get("format")
-        self.set = self._clip_metadata.get("set")
+        raise NotImplementedError
 
     @property
     def audio(self) -> Optional[Tuple[np.ndarray, float]]:
@@ -257,7 +208,7 @@ class Clip(core.Clip):
             * float - sample rate
 
         """
-        return load_audio(self.audio_path)
+        pass
 
     @core.cached_property
     def spatial_events(self) -> Optional[TAU2019_SpatialEvents]:
@@ -276,7 +227,7 @@ class Clip(core.Clip):
                 * labels_unit (str): labels unit, one of LABELS_UNITS
                 * intervals_unit (str): intervals unit, one of TIME_UNITS
         """
-        return load_spatialevents(self.csv_path)
+        pass
 
 
 @io.coerce_to_bytes_io
@@ -293,8 +244,7 @@ def load_audio(fhandle: BinaryIO, sr=None) -> Tuple[np.ndarray, float]:
         * float - The sample rate of the audio file
 
     """
-    audio, sr = librosa.load(fhandle, sr=sr, mono=False)
-    return audio, sr
+    pass
 
 
 @io.coerce_to_string_io
@@ -307,37 +257,7 @@ def load_spatialevents(fhandle: TextIO) -> TAU2019_SpatialEvents:
     Returns:
         Events: sound events annotation data
     """
-
-    labels = []
-    times = []
-    elevations = []
-    azimuths = []
-    distances = []
-    confidence = []
-    reader = csv.reader(fhandle, delimiter=",")
-    next(reader, None)  # skip header
-    for line in reader:
-        labels.append(line[0])
-        times.append([float(line[1]), float(line[2])])
-        elevations.append(float(line[3]))
-        azimuths.append(float(line[4]))
-        distances.append(float(line[5]))
-        confidence.append(1.0)
-
-    events_data = TAU2019_SpatialEvents(
-        np.array(times),
-        "seconds",
-        np.array(elevations),
-        "degrees",
-        np.array(azimuths),
-        "degrees",
-        np.array(distances),
-        "meters",
-        labels,
-        "open",
-        np.array(confidence),
-    )
-    return events_data
+    pass
 
 
 def validate_locations(locations):
@@ -352,23 +272,7 @@ def validate_locations(locations):
         ValueError: if locations have an invalid shape or
                 have cartesian coordinate values outside the expected ranges.
     """
-    if locations is None:
-        return
-
-    # validate that locations have the correct shape
-    locations_shape = np.shape(locations)
-    if len(locations_shape) != 2 or locations_shape[1] != 3:
-        raise ValueError(
-            f"Locations should be arrays with three columns, but array has shape {locations_shape}"
-        )
-
-    # validate that values are within expected ranges
-    if (np.abs(locations[:, 0]) > 90).any():
-        raise ValueError(f"Elevation values should have magnitude less than 90")
-    if (np.abs(locations[:, 1]) > 180).any():
-        raise ValueError(f"Azimuth values should have magnitude less than 180")
-    elif (locations[:, 2] < 0).any():
-        raise ValueError(f"Distance values should be nonnegative numbers")
+    pass
 
 
 @core.docstring_inherit(core.Dataset)
@@ -378,38 +282,13 @@ class Dataset(core.Dataset):
     """
 
     def __init__(self, data_home=None, version="default"):
-        super().__init__(
-            data_home,
-            version,
-            name="tau2019sse",
-            clip_class=Clip,
-            bibtex=BIBTEX,
-            indexes=INDEXES,
-            remotes=REMOTES,
-            license_info=LICENSE_INFO,
-        )
+        raise NotImplementedError
 
     @core.copy_docs(load_audio)
     def load_audio(self, *args, **kwargs):
-        return load_audio(*args, **kwargs)
+        pass
 
     @core.cached_property
     def _metadata(self):
         # parsing the data from the filenames due to lack of metadata file
-        metadata_index = {}
-
-        with open(self.index_path) as f:
-            tausse2019_index = json.load(f)
-            all_paths_filenames = list(tausse2019_index["clips"].keys())
-
-        for path_filename in all_paths_filenames:
-            clip_id = path_filename
-            path, filename = path_filename.split("/")
-            fmt, subset = path.split("_")
-
-            metadata_index[clip_id] = {
-                "format": fmt,
-                "set": subset,
-            }
-
-        return metadata_index
+        pass

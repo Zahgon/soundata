@@ -171,10 +171,7 @@ class Clip(core.Clip):
     """
 
     def __init__(self, clip_id, data_home, dataset_name, index, metadata):
-        super().__init__(clip_id, data_home, dataset_name, index, metadata)
-
-        self.audio_path = self.get_path("audio")
-        self.csv_path = self.get_path("csv")
+        raise NotImplementedError
 
     @property
     def audio(self) -> Optional[Tuple[np.ndarray, float]]:
@@ -185,7 +182,7 @@ class Clip(core.Clip):
             * float - sample rate
 
         """
-        return load_audio(self.audio_path)
+        pass
 
     @property
     def split(self):
@@ -195,7 +192,7 @@ class Clip(core.Clip):
             * str - split
 
         """
-        return self._clip_metadata.get("split")
+        raise NotImplementedError
 
     @property
     def subdataset(self):
@@ -205,7 +202,7 @@ class Clip(core.Clip):
             * str - subdataset
 
         """
-        return self._clip_metadata.get("subdataset")
+        pass
 
     @core.cached_property
     def events_classes(self) -> Optional[list]:
@@ -215,7 +212,7 @@ class Clip(core.Clip):
             * list - list of the annotated events
 
         """
-        return load_events_classes(self.csv_path)
+        pass
 
     @core.cached_property
     def events(self) -> Optional[annotations.Events]:
@@ -225,7 +222,7 @@ class Clip(core.Clip):
             * annotations.Events - audio event object
 
         """
-        return load_events(self.csv_path)
+        pass
 
     @core.cached_property
     def POSevents(self) -> Optional[annotations.Events]:
@@ -235,7 +232,7 @@ class Clip(core.Clip):
             * annotations.Events - audio event object
 
         """
-        return load_POSevents(self.csv_path)
+        pass
 
 
 @io.coerce_to_bytes_io
@@ -252,8 +249,7 @@ def load_audio(fhandle: BinaryIO, sr=None) -> Tuple[np.ndarray, float]:
         * float - The sample rate of the audio file
 
     """
-    audio, sr = librosa.load(fhandle, sr=sr, mono=True)
-    return audio, sr
+    pass
 
 
 @io.coerce_to_string_io
@@ -270,26 +266,7 @@ def load_events(fhandle: TextIO) -> annotations.Events:
         Events: sound events annotation data
 
     """
-
-    times = []
-    labels = []
-    confidence = []
-    reader = csv.reader(fhandle, delimiter=",")
-    headers = next(reader)
-    class_ids = headers[3:]
-    for line in reader:
-        times.append([float(line[1]), float(line[2])])
-        classes = [class_ids[i] for i, l in enumerate(line[3:])]
-        labels.append(",".join(classes))
-        confidence.append(1.0)
-    events_data = annotations.Events(
-        intervals=np.array(times),
-        intervals_unit="seconds",
-        labels=labels,
-        labels_unit="open",
-        confidence=np.array(confidence),
-    )
-    return events_data
+    pass
 
 
 @io.coerce_to_string_io
@@ -306,26 +283,7 @@ def load_POSevents(fhandle: TextIO) -> annotations.Events:
         Events: sound events annotation data
 
     """
-
-    times = []
-    labels = []
-    confidence = []
-    reader = csv.reader(fhandle, delimiter=",")
-    headers = next(reader)
-    class_ids = headers[3:]
-    for line in reader:
-        times.append([float(line[1]), float(line[2])])
-        classes = [class_ids[i] for i, l in enumerate(line[3:]) if l == "POS"]
-        labels.append(",".join(classes))
-        confidence.append(1.0)
-    events_data = annotations.Events(
-        intervals=np.array(times),
-        intervals_unit="seconds",
-        labels=labels,
-        labels_unit="open",
-        confidence=np.array(confidence),
-    )
-    return events_data
+    pass
 
 
 @io.coerce_to_string_io
@@ -343,10 +301,7 @@ def load_events_classes(fhandle: TextIO) -> list:
         class_ids: list of events classes
 
     """
-    reader = csv.reader(fhandle, delimiter=",")
-    headers = next(reader)
-    class_ids = headers[3:]
-    return class_ids
+    pass
 
 
 @core.docstring_inherit(core.Dataset)
@@ -354,80 +309,12 @@ class Dataset(core.Dataset):
     """The DCASE bioacoustic dataset"""
 
     def __init__(self, data_home=None, version="default"):
-        super().__init__(
-            data_home,
-            version,
-            name="dcase_bioacoustic",
-            clip_class=Clip,
-            bibtex=BIBTEX,
-            indexes=INDEXES,
-            remotes=REMOTES,
-            license_info=LICENSE_INFO,
-        )
+        raise NotImplementedError
 
     @core.copy_docs(load_audio)
     def load_audio(self, *args, **kwargs):
-        return load_audio(*args, **kwargs)
+        pass
 
     @core.cached_property
     def _metadata(self):
-        metadata_index = {
-            clip_id: {
-                "subdataset": os.path.normpath(v["csv"][0])
-                .split(clip_id)[0]
-                .split(os.path.sep)[-2],
-                "split": (
-                    "train"
-                    if "Training" in os.path.normpath(v["csv"][0]).split(clip_id)[0]
-                    else (
-                        "validation"
-                        if "Validation"
-                        in os.path.normpath(v["csv"][0]).split(clip_id)[0]
-                        else "evaluation"
-                    )
-                ),
-            }
-            for clip_id, v in self._index["clips"].items()
-        }
-
-        metadata_paths = {
-            "train": os.path.join(
-                self.data_home, "DCASE2022_task5_Training_set_classes.csv"
-            ),
-            "validation": os.path.join(
-                self.data_home, "DCASE2022_task5_Validation_set_classes.csv"
-            ),
-        }
-
-        metadata_index["class_codes"] = {}
-        metadata_index["subdatasets"] = {}
-
-        for split, metadata_path in metadata_paths.items():
-            metadata_path = os.path.normpath(metadata_path)
-            if not os.path.exists(metadata_path):
-                raise FileNotFoundError("Metadata not found. Did you run .download()?")
-
-            with open(metadata_path, "r") as fhandle:
-                reader = csv.reader(fhandle, delimiter=",")
-
-                headers = next(reader)
-                class_code_id = headers.index("class_code")
-                class_name_id = headers.index("class_name")
-                dataset_id = headers.index("dataset")
-
-                for line in reader:
-                    metadata_index["class_codes"][line[class_code_id]] = {
-                        "subdataset": line[dataset_id],
-                        "class_name": line[class_name_id],
-                        "split": split,
-                    }
-                    if line[dataset_id] not in metadata_index["subdatasets"]:
-                        metadata_index["subdatasets"][line[dataset_id]] = [
-                            line[class_code_id]
-                        ]
-                    else:
-                        metadata_index["subdatasets"][line[dataset_id]].append(
-                            line[class_code_id]
-                        )
-
-        return metadata_index
+        pass

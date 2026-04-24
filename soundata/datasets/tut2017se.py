@@ -274,11 +274,7 @@ class Clip(core.Clip):
     """
 
     def __init__(self, clip_id, data_home, dataset_name, index, metadata):
-        super().__init__(clip_id, data_home, dataset_name, index, metadata)
-
-        self.audio_path = self.get_path("audio")
-        self.annotations_path = self.get_path("annotations")
-        self.non_verified_annotations_path = self.get_path("non_verified_annotations")
+        raise NotImplementedError
 
     @property
     def audio(self) -> Optional[Tuple[np.ndarray, float]]:
@@ -289,7 +285,7 @@ class Clip(core.Clip):
             * float - sample rate
 
         """
-        return load_audio(self.audio_path)
+        pass
 
     @property
     def split(self):
@@ -299,7 +295,7 @@ class Clip(core.Clip):
             * str - subset the clip belongs to (for experiments): development (fold1, fold2, fold3, fold4) or evaluation
 
         """
-        return self._clip_metadata.get("split")
+        raise NotImplementedError
 
     @core.cached_property
     def events(self) -> Optional[annotations.Events]:
@@ -309,7 +305,7 @@ class Clip(core.Clip):
             * annotations.Events - sound events with start time, end time, label and confidence
 
         """
-        return load_events(self.annotations_path)
+        pass
 
     @core.cached_property
     def non_verified_events(self) -> Optional[annotations.Events]:
@@ -319,7 +315,7 @@ class Clip(core.Clip):
             * str - path to the non-verified annotations file
 
         """
-        return load_events(self.non_verified_annotations_path)
+        pass
 
 
 @io.coerce_to_bytes_io
@@ -336,8 +332,7 @@ def load_audio(fhandle: BinaryIO, sr=None) -> Tuple[np.ndarray, float]:
         * float - The sample rate of the audio file
 
     """
-    audio, sr = librosa.load(fhandle, sr=sr, mono=False)
-    return audio, sr
+    pass
 
 
 @io.coerce_to_string_io
@@ -351,23 +346,7 @@ def load_events(fhandle: TextIO) -> annotations.Events:
     Returns:
         Events: sound events annotation data
     """
-
-    times = []
-    labels = []
-    confidence = []
-    reader = csv.reader(fhandle, delimiter="\t")
-    for line in reader:
-        offset = (
-            0 if len(line) == 3 else 2
-        )  # ann files in dev and eval have different format
-        times.append([float(line[offset]), float(line[offset + 1])])
-        labels.append(line[offset + 2])
-        confidence.append(1.0)
-
-    events_data = annotations.Events(
-        np.array(times), "seconds", labels, "open", np.array(confidence)
-    )
-    return events_data
+    pass
 
 
 @core.docstring_inherit(core.Dataset)
@@ -375,61 +354,16 @@ class Dataset(core.Dataset):
     """The TUT Sound events 2017 dataset"""
 
     def __init__(self, data_home=None, version="default"):
-        super().__init__(
-            data_home,
-            version,
-            name="tut2017se",
-            clip_class=Clip,
-            bibtex=BIBTEX,
-            indexes=INDEXES,
-            remotes=REMOTES,
-            license_info=LICENSE_INFO,
-        )
+        raise NotImplementedError
 
     @core.copy_docs(load_audio)
     def load_audio(self, *args, **kwargs):
-        return load_audio(*args, **kwargs)
+        pass
 
     @core.copy_docs(load_events)
     def load_events(self, *args, **kwargs):
-        return load_events(*args, **kwargs)
+        pass
 
     @core.cached_property
     def _metadata(self):
-        splits = [
-            "development.fold1",
-            "development.fold2",
-            "development.fold3",
-            "development.fold4",
-            "evaluation",
-        ]
-
-        metadata_index = {}
-
-        for split in splits:
-            if split.split(".")[0] == "development":
-                evaluation_setup_path = (
-                    "TUT-sound-events-2017-development/evaluation_setup"
-                )
-                fold = split.split(".")[1]
-                evaluation_setup_file = os.path.join(
-                    self.data_home,
-                    evaluation_setup_path,
-                    "street_{}_test.txt".format(fold),
-                )
-            else:
-                evaluation_setup_path = (
-                    "TUT-sound-events-2017-evaluation/evaluation_setup"
-                )
-                evaluation_setup_file = os.path.join(
-                    self.data_home, evaluation_setup_path, "street_test.txt"
-                )
-
-            with open(evaluation_setup_file) as csv_file:
-                csv_reader = csv.reader(csv_file, delimiter="\t")
-                for row in csv_reader:
-                    file_name = os.path.basename(row[0])
-                    clip_id = os.path.basename(file_name).replace(".wav", "")
-                    metadata_index[clip_id] = {"split": split}
-
-        return metadata_index
+        pass

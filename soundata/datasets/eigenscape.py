@@ -150,9 +150,7 @@ class Clip(core.Clip):
     """
 
     def __init__(self, clip_id, data_home, dataset_name, index, metadata):
-        super().__init__(clip_id, data_home, dataset_name, index, metadata)
-
-        self.audio_path = self.get_path("audio")
+        raise NotImplementedError
 
     @property
     def audio(self) -> Optional[Tuple[np.ndarray, float]]:
@@ -163,7 +161,7 @@ class Clip(core.Clip):
             * float - sample rate
 
         """
-        return load_audio(self.audio_path)
+        pass
 
     @property
     def tags(self):
@@ -173,11 +171,7 @@ class Clip(core.Clip):
             * annotations.Tags - Tags (scene label) of the clip + confidence.
 
         """
-        scene_label = self._clip_metadata.get("scene_label")
-        if scene_label is None:
-            return None
-        else:
-            return annotations.Tags([scene_label], "open", np.array([1.0]))
+        pass
 
     @property
     def location(self):
@@ -186,7 +180,7 @@ class Clip(core.Clip):
         Returns:
             * str - Tags annotation object
         """
-        return self._clip_metadata.get("location")
+        pass
 
     @property
     def time(self):
@@ -195,7 +189,7 @@ class Clip(core.Clip):
         Returns:
             * str - time when the audio signal was recorded
         """
-        return self._clip_metadata.get("time")
+        pass
 
     @property
     def date(self):
@@ -204,7 +198,7 @@ class Clip(core.Clip):
         Returns:
             * str - date when the audio signal was recorded
         """
-        return self._clip_metadata.get("date")
+        pass
 
     @property
     def additional_information(self):
@@ -213,7 +207,7 @@ class Clip(core.Clip):
         Returns:
             * str - notes included by the dataset authors with other details relevant to the specific clip
         """
-        return self._clip_metadata.get("additional information")
+        pass
 
 
 @io.coerce_to_bytes_io
@@ -229,8 +223,7 @@ def load_audio(fhandle: BinaryIO, sr=None) -> Tuple[np.ndarray, float]:
         * np.ndarray - the audio signal
         * float - The sample rate of the audio file
     """
-    audio, sr = librosa.load(fhandle, sr=sr, mono=False)
-    return audio, sr
+    pass
 
 
 @core.docstring_inherit(core.Dataset)
@@ -238,49 +231,12 @@ class Dataset(core.Dataset):
     """The EigenScape dataset"""
 
     def __init__(self, data_home=None, version="default"):
-        super().__init__(
-            data_home,
-            version,
-            name="eigenscape",
-            clip_class=Clip,
-            bibtex=BIBTEX,
-            indexes=INDEXES,
-            remotes=REMOTES,
-            license_info=LICENSE_INFO,
-        )
+        raise NotImplementedError
 
     @core.copy_docs(load_audio)
     def load_audio(self, *args, **kwargs):
-        return load_audio(*args, **kwargs)
+        pass
 
     @core.cached_property
     def _metadata(self):
-        metadata_path = os.path.join(self.data_home, "Metadata-EigenScape.csv")
-
-        if not os.path.exists(metadata_path):
-            raise FileNotFoundError("Metadata not found. Did you run .download()?")
-
-        metadata_index = {}
-
-        with open(metadata_path) as csv_file:
-            csv_reader = csv.reader(csv_file, delimiter=",")
-            next(csv_reader)
-            for row in csv_reader:
-                file_name = os.path.basename(row[0])
-                clip_id = (
-                    os.path.basename(file_name).replace(".wav", "").replace("-0", ".")
-                )
-                scene_label = row[1]
-                location = row[2]
-                time = row[3]
-                date = row[4]
-                additional_information = row[5]
-                metadata_index[clip_id] = {
-                    "scene_label": scene_label,
-                    "location": location,
-                    "time": time,
-                    "date": date,
-                    "additional information": additional_information,
-                }
-
-        return metadata_index
+        pass

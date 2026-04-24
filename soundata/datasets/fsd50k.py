@@ -308,9 +308,7 @@ class Clip(core.Clip):
     """
 
     def __init__(self, clip_id, data_home, dataset_name, index, metadata):
-        super().__init__(clip_id, data_home, dataset_name, index, metadata)
-
-        self.audio_path = self.get_path("audio")
+        raise NotImplementedError
 
     @property
     def audio(self) -> Optional[Tuple[np.ndarray, float]]:
@@ -321,7 +319,7 @@ class Clip(core.Clip):
             * float - sample rate
 
         """
-        return load_audio(self.audio_path)
+        pass
 
     @property
     def tags(self):
@@ -331,11 +329,7 @@ class Clip(core.Clip):
             * annotations.Tags - tag (label) of the clip + confidence
 
         """
-        return annotations.Tags(
-            self._clip_metadata["ground_truth"].get("tags"),
-            "open",
-            np.array([1.0] * len(self._clip_metadata["ground_truth"].get("tags"))),
-        )
+        pass
 
     @property
     def mids(self):
@@ -345,11 +339,7 @@ class Clip(core.Clip):
             * annotations.Tags - tag (labels) encoded in Audioset formatting
 
         """
-        return annotations.Tags(
-            self._clip_metadata["ground_truth"].get("mids"),
-            "open",
-            np.array([1.0] * len(self._clip_metadata["ground_truth"].get("tags"))),
-        )
+        pass
 
     @property
     def split(self):
@@ -359,7 +349,7 @@ class Clip(core.Clip):
             * str - flag to identify if clip belongs to developement, evaluation or validation splits
 
         """
-        return self._clip_metadata["ground_truth"].get("split")
+        raise NotImplementedError
 
     @property
     def title(self):
@@ -369,7 +359,7 @@ class Clip(core.Clip):
             * str - the title of the uploaded file in Freesound
 
         """
-        return self._clip_metadata["clip_info"].get("title")
+        pass
 
     @property
     def description(self):
@@ -379,7 +369,7 @@ class Clip(core.Clip):
             * str - description of the sound provided by the Freesound uploader
 
         """
-        return self._clip_metadata["clip_info"].get("description")
+        pass
 
     @property
     def pp_pnp_ratings(self):
@@ -388,7 +378,7 @@ class Clip(core.Clip):
         Returns:
             * dict - PP/PNP ratings given to the main label of the clip
         """
-        return self._clip_metadata.get("pp_pnp_ratings")
+        pass
 
 
 @io.coerce_to_bytes_io
@@ -406,8 +396,7 @@ def load_audio(fhandle: BinaryIO, sr=None) -> Tuple[np.ndarray, float]:
         * np.ndarray - the mono audio signal
         * float - The sample rate of the audio file
     """
-    audio, sr = librosa.load(fhandle, sr=sr, mono=True)
-    return audio, sr
+    pass
 
 
 def load_ground_truth(data_path):
@@ -420,54 +409,7 @@ def load_ground_truth(data_path):
         * ground_truth_dict (dict): ground truth dict of the clips in the input split
         * clip_ids (list): list of clip ids of the input split
     """
-    ground_truth_dict = {}
-    clip_ids = []
-    with open(data_path, "r") as fhandle:
-        reader = csv.reader(fhandle, delimiter=",")
-        next(reader)
-        for line in reader:
-            if len(line) == 3:
-                if "collection" not in data_path:
-                    ground_truth_dict[line[0]] = {
-                        "tags": (
-                            list(line[1].split(","))
-                            if "," in line[1]
-                            else list([line[1]])
-                        ),
-                        "mids": (
-                            list(line[2].split(","))
-                            if "," in line[2]
-                            else list([line[2]])
-                        ),
-                        "split": "test",
-                    }
-                else:
-                    ground_truth_dict[line[0]] = {
-                        "tags": (
-                            list(line[1].split(","))
-                            if "," in line[1]
-                            else list([line[1]])
-                        ),
-                        "mids": (
-                            list(line[2].split(","))
-                            if "," in line[2]
-                            else list([line[2]])
-                        ),
-                    }
-                clip_ids.append(line[0])
-            if len(line) == 4:
-                ground_truth_dict[line[0]] = {
-                    "tags": (
-                        list(line[1].split(",")) if "," in line[1] else list([line[1]])
-                    ),
-                    "mids": (
-                        list(line[2].split(",")) if "," in line[2] else list([line[2]])
-                    ),
-                    "split": "train" if line[3] == "train" else "validation",
-                }
-                clip_ids.append(line[0])
-
-    return ground_truth_dict, clip_ids
+    pass
 
 
 def load_fsd50k_vocabulary(data_path):
@@ -480,15 +422,7 @@ def load_fsd50k_vocabulary(data_path):
         * fsd50k_to_audioset (dict): vocabulary to convert FSD50K to AudioSet
         * audioset_to_fsd50k (dict): vocabulary to convert from AudioSet to FSD50K
     """
-    fsd50k_to_audioset = {}
-    audioset_to_fsd50k = {}
-    with open(data_path, "r") as fhandle:
-        reader = csv.reader(fhandle, delimiter=",")
-        for line in reader:
-            fsd50k_to_audioset[line[1]] = line[2]
-            audioset_to_fsd50k[line[2]] = line[1]
-
-    return fsd50k_to_audioset, audioset_to_fsd50k
+    pass
 
 
 @core.docstring_inherit(core.Dataset)
@@ -496,152 +430,40 @@ class Dataset(core.Dataset):
     """The FSD50K dataset"""
 
     def __init__(self, data_home=None, version="default"):
-        super().__init__(
-            data_home,
-            version,
-            name="fsd50k",
-            clip_class=Clip,
-            bibtex=BIBTEX,
-            indexes=INDEXES,
-            remotes=REMOTES,
-            license_info=LICENSE_INFO,
-        )
-
-        # Ground_truth paths
-        self.ground_truth_dev_path = os.path.join(
-            self.data_home, "FSD50K.ground_truth", "dev.csv"
-        )
-        self.ground_truth_eval_path = os.path.join(
-            self.data_home, "FSD50K.ground_truth", "eval.csv"
-        )
-
-        # Sound collection format labels paths
-        self.collection_dev_path = os.path.join(
-            self.data_home, "FSD50K.metadata", "collection", "collection_dev.csv"
-        )
-        self.collection_eval_path = os.path.join(
-            self.data_home, "FSD50K.metadata", "collection", "collection_eval.csv"
-        )
-
-        # Clip metadata paths
-        self.clips_info_dev_path = os.path.join(
-            self.data_home, "FSD50K.metadata", "dev_clips_info_FSD50K.json"
-        )
-        self.clips_info_eval_path = os.path.join(
-            self.data_home, "FSD50K.metadata", "eval_clips_info_FSD50K.json"
-        )
-
-        # Class info path
-        self.label_info_path = os.path.join(
-            self.data_home, "FSD50K.metadata", "class_info_FSD50K.json"
-        )
-
-        # PP/PNP ratings path
-        self.pp_pnp_ratings_path = os.path.join(
-            self.data_home, "FSD50K.metadata", "pp_pnp_ratings_FSD50K.json"
-        )
-
-        # Vocabulary paths
-        self.vocabulary_path = os.path.join(
-            self.data_home, "FSD50K.ground_truth", "vocabulary.csv"
-        )
-        self.collection_vocabulary_dev_path = os.path.join(
-            self.data_home,
-            "FSD50K.metadata",
-            "collection",
-            "vocabulary_collection_dev.csv",
-        )
-        self.collection_vocabulary_eval_path = (
-            self.collection_vocabulary_dev_path.replace("_dev", "_eval")
-        )
+        raise NotImplementedError
 
     @core.copy_docs(load_audio)
     def load_audio(self, *args, **kwargs):
-        return load_audio(*args, **kwargs)
+        pass
 
     @core.copy_docs(load_ground_truth)
     def load_ground_truth(self, *args, **kwargs):
-        return load_ground_truth(*args, **kwargs)
+        pass
 
     @core.copy_docs(load_fsd50k_vocabulary)
     def load_fsd50k_vocabulary(self, *args, **kwargs):
-        return load_fsd50k_vocabulary(*args, **kwargs)
+        pass
 
     @property
     def fsd50k_to_audioset(self):
-        return load_fsd50k_vocabulary(self.vocabulary_path)[0]
+        pass
 
     @property
     def audioset_to_fsd50k(self):
-        return load_fsd50k_vocabulary(self.vocabulary_path)[1]
+        pass
 
     @property
     def label_info(self):
-        return (
-            json.load(open(self.label_info_path, "r"))
-            if os.path.exists(self.label_info_path)
-            else None
-        )
+        pass
 
     @property
     def collection_fsd50k_to_audioset(self):
-        collection_fsd50k_to_audioset = {
-            "dev": load_fsd50k_vocabulary(self.collection_vocabulary_dev_path)[0],
-            "eval": load_fsd50k_vocabulary(self.collection_vocabulary_eval_path)[0],
-        }
-        return collection_fsd50k_to_audioset
+        pass
 
     @property
     def collection_audioset_to_fsd50k(self):
-        collection_audioset_to_fsd50k = {
-            "dev": load_fsd50k_vocabulary(self.collection_vocabulary_dev_path)[1],
-            "eval": load_fsd50k_vocabulary(self.collection_vocabulary_eval_path)[1],
-        }
-        return collection_audioset_to_fsd50k
+        pass
 
     @core.cached_property
     def _metadata(self):
-        metadata_index = {}
-
-        ground_truth_dev, clip_ids_dev = load_ground_truth(self.ground_truth_dev_path)
-        ground_truth_eval, clip_ids_eval = load_ground_truth(
-            self.ground_truth_eval_path
-        )
-
-        collection_dev, _ = load_ground_truth(self.collection_dev_path)
-        collection_eval, _ = load_ground_truth(self.collection_eval_path)
-
-        clips_info_dev = (
-            json.load(open(self.clips_info_dev_path, "r"))
-            if os.path.exists(self.clips_info_dev_path)
-            else None
-        )
-        clips_info_eval = (
-            json.load(open(self.clips_info_eval_path, "r"))
-            if os.path.exists(self.clips_info_eval_path)
-            else None
-        )
-
-        pp_pnp_ratings = (
-            json.load(open(self.pp_pnp_ratings_path, "r"))
-            if os.path.exists(self.pp_pnp_ratings_path)
-            else None
-        )
-
-        for clip_id in self.clip_ids:
-            if clip_id in clip_ids_dev:
-                metadata_index[clip_id] = {
-                    "ground_truth": ground_truth_dev[clip_id],
-                    "clip_info": clips_info_dev[clip_id],
-                    "pp_pnp_ratings": pp_pnp_ratings[clip_id],
-                    "collection_labels": collection_dev[clip_id],
-                }
-            if clip_id in clip_ids_eval:
-                metadata_index[clip_id] = {
-                    "ground_truth": ground_truth_eval[clip_id],
-                    "clip_info": clips_info_eval[clip_id],
-                    "pp_pnp_ratings": pp_pnp_ratings[clip_id],
-                    "collection_labels": collection_eval[clip_id],
-                }
-
-        return metadata_index
+        pass

@@ -183,11 +183,7 @@ class Clip(core.Clip):
     """
 
     def __init__(self, clip_id, data_home, dataset_name, index, metadata):
-        super().__init__(clip_id, data_home, dataset_name, index, metadata)
-
-        self.audio_path = self.get_path("audio")
-        self.jams_path = self.get_path("jams")
-        self.txt_path = self.get_path("txt")
+        raise NotImplementedError
 
     @property
     def audio(self) -> Optional[Tuple[np.ndarray, float]]:
@@ -198,7 +194,7 @@ class Clip(core.Clip):
             * float - sample rate
 
         """
-        return load_audio(self.audio_path)
+        pass
 
     @property
     def split(self):
@@ -208,7 +204,7 @@ class Clip(core.Clip):
             * str - split
 
         """
-        return self._clip_metadata.get("split")
+        raise NotImplementedError
 
     @core.cached_property
     def events(self) -> Optional[annotations.Events]:
@@ -218,7 +214,7 @@ class Clip(core.Clip):
             * annotations.Events - audio event object
 
         """
-        return load_events(self.txt_path)
+        pass
 
 
 @io.coerce_to_bytes_io
@@ -235,8 +231,7 @@ def load_audio(fhandle: BinaryIO, sr=None) -> Tuple[np.ndarray, float]:
         * float - The sample rate of the audio file
 
     """
-    audio, sr = librosa.load(fhandle, sr=sr, mono=True)
-    return audio, sr
+    pass
 
 
 @io.coerce_to_string_io
@@ -249,20 +244,7 @@ def load_events(fhandle: TextIO) -> annotations.Events:
     Returns:
         Events: sound events annotation data
     """
-
-    times = []
-    labels = []
-    confidence = []
-    reader = csv.reader(fhandle, delimiter="\t")
-    for line in reader:
-        times.append([float(line[0]), float(line[1])])
-        labels.append(line[2])
-        confidence.append(1.0)
-
-    events_data = annotations.Events(
-        np.array(times), "seconds", labels, "open", np.array(confidence)
-    )
-    return events_data
+    pass
 
 
 @core.docstring_inherit(core.Dataset)
@@ -272,33 +254,12 @@ class Dataset(core.Dataset):
     """
 
     def __init__(self, data_home=None, version="default"):
-        super().__init__(
-            data_home,
-            version,
-            name="urbansed",
-            clip_class=Clip,
-            bibtex=BIBTEX,
-            indexes=INDEXES,
-            remotes=REMOTES,
-            license_info=LICENSE_INFO,
-        )
+        raise NotImplementedError
 
     @core.copy_docs(load_audio)
     def load_audio(self, *args, **kwargs):
-        return load_audio(*args, **kwargs)
+        pass
 
     @core.cached_property
     def _metadata(self):
-        splits = ["train", "validate", "test"]
-        expected_sizes = [6000, 2000, 2000]
-        metadata_index = {}
-
-        for split, es in zip(splits, expected_sizes):
-            annotation_folder = os.path.join(self.data_home, "annotations", split)
-            txtfiles = sorted(glob.glob(os.path.join(annotation_folder, "*.txt")))
-
-            for tf in txtfiles:
-                clip_id = os.path.basename(tf).replace(".txt", "")
-                metadata_index[clip_id] = {"split": split}
-
-        return metadata_index
+        pass

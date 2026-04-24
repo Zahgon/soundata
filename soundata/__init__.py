@@ -1,17 +1,8 @@
 import importlib
 import os
 import pkgutil
-
 from .version import version as __version__
-
-
-DATASETS = [
-    d.name
-    for d in pkgutil.iter_modules(
-        [os.path.dirname(os.path.abspath(__file__)) + "/datasets"]
-    )
-]
-
+DATASETS = [d.name for d in pkgutil.iter_modules([os.path.dirname(os.path.abspath(__file__)) + '/datasets'])]
 
 def list_datasets():
     """Get a list of all soundata dataset names
@@ -19,8 +10,7 @@ def list_datasets():
     Returns:
         list: list of dataset names as strings
     """
-    return DATASETS
-
+    raise NotImplementedError()
 
 def list_dataset_versions(dataset_name):
     """List the available versions of a dataset
@@ -29,21 +19,9 @@ def list_dataset_versions(dataset_name):
         list: a list of available versions
 
     """
-    if dataset_name not in DATASETS:
-        raise ValueError("Invalid dataset {}".format(dataset_name))
-    module = importlib.import_module("soundata.datasets.{}".format(dataset_name))
-    return "Available versions for {}: {}. Default version: {}".format(
-        dataset_name,
-        [
-            x
-            for x in list(module.INDEXES.keys())
-            if x not in ["default", "sample", "test"]
-        ],
-        module.INDEXES["default"],
-    )
+    raise NotImplementedError()
 
-
-def initialize(dataset_name, data_home=None, version="default"):
+def initialize(dataset_name, data_home=None, version='default'):
     """Load a soundata dataset by name
 
     Example:
@@ -68,8 +46,4 @@ def initialize(dataset_name, data_home=None, version="default"):
         Dataset: a soundata.core.Dataset object
 
     """
-    if dataset_name not in DATASETS:
-        raise ValueError("Invalid dataset {}".format(dataset_name))
-
-    module = importlib.import_module("soundata.datasets.{}".format(dataset_name))
-    return module.Dataset(data_home=data_home, version=version)
+    raise NotImplementedError()

@@ -169,9 +169,7 @@ class Clip(core.Clip):
     """
 
     def __init__(self, clip_id, data_home, dataset_name, index, metadata):
-        super().__init__(clip_id, data_home, dataset_name, index, metadata)
-
-        self.audio_path = self.get_path("audio")
+        raise NotImplementedError
 
     @property
     def audio(self) -> Optional[Tuple[np.ndarray, float]]:
@@ -182,7 +180,7 @@ class Clip(core.Clip):
             * float - sample rate
 
         """
-        return load_audio(self.audio_path)
+        pass
 
     @property
     def file_name(self):
@@ -191,7 +189,7 @@ class Clip(core.Clip):
         Returns:
             * str - Name of the file.
         """
-        return self._clip_metadata.get("file_name")
+        pass
 
     @property
     def keywords(self):
@@ -200,7 +198,7 @@ class Clip(core.Clip):
         Returns:
             * str - Keywords for the clip.
         """
-        return self._clip_metadata.get("keywords")
+        pass
 
     @property
     def sound_id(self):
@@ -209,7 +207,7 @@ class Clip(core.Clip):
         Returns:
             * str - Sound ID.
         """
-        return self._clip_metadata.get("sound_id")
+        pass
 
     @property
     def sound_link(self):
@@ -218,7 +216,7 @@ class Clip(core.Clip):
         Returns:
             * str - URL of the sound.
         """
-        return self._clip_metadata.get("sound_link")
+        pass
 
     @property
     def start_end_samples(self):
@@ -227,7 +225,7 @@ class Clip(core.Clip):
         Returns:
             * tuple - Start and end samples.
         """
-        return self._clip_metadata.get("start_end_samples")
+        pass
 
     @property
     def manufacturer(self):
@@ -236,7 +234,7 @@ class Clip(core.Clip):
         Returns:
             * str - Manufacturer name.
         """
-        return self._clip_metadata.get("manufacturer")
+        pass
 
     @property
     def captions(self):
@@ -245,7 +243,7 @@ class Clip(core.Clip):
         Returns:
             * list - Captions.
         """
-        return self._clip_metadata.get("captions")
+        pass
 
     @property
     def license(self):
@@ -254,7 +252,7 @@ class Clip(core.Clip):
         Returns:
             * str - License information.
         """
-        return self._clip_metadata.get("license")
+        pass
 
     @property
     def split(self):
@@ -263,8 +261,7 @@ class Clip(core.Clip):
         Returns:
             * str - split name
         """
-
-        return self._clip_metadata.get("split")
+        raise NotImplementedError
 
 
 @io.coerce_to_bytes_io
@@ -281,8 +278,7 @@ def load_audio(fhandle: BinaryIO, sr=None) -> Tuple[np.ndarray, float]:
         * float - The sample rate of the audio file
 
     """
-    audio, sr = librosa.load(fhandle, sr=sr, mono=True)
-    return audio, sr
+    pass
 
 
 @core.docstring_inherit(core.Dataset)
@@ -292,69 +288,13 @@ class Dataset(core.Dataset):
     """
 
     def __init__(self, data_home=None, version="default"):
-        super().__init__(
-            data_home,
-            version,
-            name="clotho",
-            clip_class=Clip,
-            bibtex=BIBTEX,
-            indexes=INDEXES,
-            remotes=REMOTES,
-            license_info=LICENSE_INFO,
-        )
+        raise NotImplementedError
 
     @core.copy_docs(load_audio)
     def load_audio(self, *args, **kwargs):
-        return load_audio(*args, **kwargs)
+        pass
 
     @core.cached_property
     def _metadata(self):
         # Name of each splits
-        splits = ["development", "validation", "evaluation"]
-
-        # Create empty index dictionary
-        metadata_index = {}
-
-        # Process through each split
-        for split in splits:
-
-            metadata_path = os.path.join(self.data_home, f"clotho_metadata_{split}.csv")
-            captions_path = os.path.join(self.data_home, f"clotho_captions_{split}.csv")
-
-            metadata_df = pd.read_csv(metadata_path, encoding="ISO-8859-1")
-            captions_df = pd.read_csv(captions_path, encoding="ISO-8859-1")
-
-            # Create clip_id in df by removing .wav from the file_name
-            captions_df["clip_id"] = captions_df["file_name"].apply(
-                lambda x: x.replace(".wav", "")
-            )
-            metadata_df["clip_id"] = metadata_df["file_name"].apply(
-                lambda x: x.replace(".wav", "")
-            )
-
-            for _, row in metadata_df.iterrows():
-                clip_id = row["clip_id"]
-
-                # find matching row in captions_df
-                caption_row = captions_df[captions_df["clip_id"] == clip_id].iloc[0]
-
-                metadata_index[clip_id] = {
-                    "clip_id": str(clip_id),
-                    "file_name": str(row["file_name"]),
-                    "keywords": str(row.get("keywords", "")),
-                    "sound_id": str(row.get("sound_id", "")),
-                    "sound_link": str(row.get("sound_link", "")),
-                    "start_end_samples": str(row.get("start_end_samples", "")),
-                    "manufacturer": str(row.get("manufacturer", "")),
-                    "license": str(row.get("license", "")),
-                    "captions": [
-                        caption_row.get("caption_1", ""),
-                        caption_row.get("caption_2", ""),
-                        caption_row.get("caption_3", ""),
-                        caption_row.get("caption_4", ""),
-                        caption_row.get("caption_5", ""),
-                    ],
-                    "split": split,
-                }
-
-            return metadata_index
+        pass

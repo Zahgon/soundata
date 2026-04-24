@@ -144,20 +144,7 @@ class Clip(core.Clip):
     """
 
     def __init__(self, clip_id, data_home, dataset_name, index, metadata):
-        super().__init__(clip_id, data_home, dataset_name, index, metadata)
-
-        self.audio_path = self.get_path("audio")
-
-        source_label = self._clip_metadata.get("source_label")
-        self.source_label = source_label
-
-        source_angle = self._clip_metadata.get("source_angle")
-        if source_angle is None:
-            self.source_angle = None
-        else:
-            self.source_angle = source_angle
-
-        self.microphone_info = self._clip_metadata.get("microphone_info")
+        raise NotImplementedError
 
     @property
     def audio(self) -> Optional[Tuple[np.ndarray, float]]:
@@ -168,7 +155,7 @@ class Clip(core.Clip):
             * float - sample rate
 
         """
-        return load_audio(self.audio_path)
+        pass
 
 
 @io.coerce_to_bytes_io
@@ -183,8 +170,7 @@ def load_audio(fhandle: BinaryIO, sr=48000) -> Tuple[np.ndarray, float]:
         * np.ndarray - the audio signal
         * float - The sample rate of the audio file
     """
-    audio, sr = librosa.load(fhandle, sr=sr, mono=False)
-    return audio, sr
+    pass
 
 
 @core.docstring_inherit(core.Dataset)
@@ -192,49 +178,13 @@ class Dataset(core.Dataset):
     """The 3D-MARCo dataset"""
 
     def __init__(self, data_home=None, version="default"):
-        super().__init__(
-            data_home,
-            version,
-            name="marco",
-            clip_class=Clip,
-            bibtex=BIBTEX,
-            indexes=INDEXES,
-            remotes=REMOTES,
-            license_info=LICENSE_INFO,
-        )
+        raise NotImplementedError
 
     @core.copy_docs(load_audio)
     def load_audio(self, *args, **kwargs):
-        return load_audio(*args, **kwargs)
+        pass
 
     @core.cached_property
     def _metadata(self):
         # parsing the data from the filenames due to lack of metadata file
-        metadata_index = {}
-
-        with open(self.index_path) as f:
-            marco_index = json.load(f)
-            all_paths_filenames = list(marco_index["clips"].keys())
-
-        for path_filename in all_paths_filenames:
-            clip_id = path_filename
-            path, filename = path_filename.split("/")
-            source_label = path
-            clip_metadata = filename.split("_")
-
-            # remove arbitrary clip numbering used by dataset authors
-            clip_metadata = [
-                data for data in clip_metadata if data != "" and data[0] != "0"
-            ]
-            microphone_info = clip_metadata[1:]
-            if "deg" in clip_metadata[0]:
-                source_angle = "".join(clip_metadata[0].partition("deg")[:2])
-            else:
-                source_angle = None
-            metadata_index[clip_id] = {
-                "source_label": source_label,
-                "source_angle": source_angle,
-                "microphone_info": microphone_info,
-            }
-
-        return metadata_index
+        pass

@@ -216,16 +216,7 @@ class Clip(core.Clip):
     """
 
     def __init__(self, clip_id, data_home, dataset_name, index, metadata):
-        super().__init__(
-            clip_id,
-            data_home,
-            dataset_name=dataset_name,
-            index=index,
-            metadata=metadata,
-        )
-
-        self.audio_path = self.get_path("audio")
-        self.annotation_path = self.get_path("annotation")
+        raise NotImplementedError
 
     @core.cached_property
     def events(self) -> Optional[annotations.MultiAnnotator]:
@@ -235,7 +226,7 @@ class Clip(core.Clip):
         Returns:
             * annotations.MultiAnnotator - sound events with start time, end time, label and confidence
         """
-        return load_annotation(self.annotation_path)
+        pass
 
     @property
     def audio(self):
@@ -245,7 +236,7 @@ class Clip(core.Clip):
         Returns:
             * np.ndarray - audio signal
         """
-        return load_audio(self.audio_path)
+        pass
 
     @property
     def sensor_id(self) -> str:
@@ -255,7 +246,7 @@ class Clip(core.Clip):
         Returns:
             * str - sensor_id of the device used to record the data
         """
-        return self._clip_metadata["sensor_id"]
+        pass
 
     @property
     def town(self) -> str:
@@ -265,7 +256,7 @@ class Clip(core.Clip):
         Returns:
             * str - location of the sensor, one of {'East 1', 'East 2', 'West 1', 'West 2'}
         """
-        return self._clip_metadata["town"]
+        pass
 
     @property
     def timestamp(self) -> np.datetime64:
@@ -275,11 +266,7 @@ class Clip(core.Clip):
         Returns:
             * np.datetime64 - timestamp of the clip
         """
-
-        return np.datetime64(
-            f"{self._clip_metadata['year']}-{self._clip_metadata['month']:02d}-{self._clip_metadata['date']:02d}"
-            + f"T{self._clip_metadata['hour']:02d}:{self._clip_metadata['minute']:02d}:{self._clip_metadata['second']:02d}"
-        )
+        pass
 
     @property
     def dotw(self) -> int:
@@ -289,7 +276,7 @@ class Clip(core.Clip):
         Returns:
             * int - day of the week when the clip was recorded, starting from 0 for Sunday
         """
-        return self._clip_metadata["day"]
+        pass
 
 
 @io.coerce_to_string_io
@@ -303,28 +290,7 @@ def load_annotation(fhandle: TextIO) -> annotations.MultiAnnotator:
     Returns:
         * annotations.MultiAnnotator - sound events with start time, end time, label and confidence
     """
-
-    df = pd.read_csv(fhandle)
-
-    annotators = []
-    annotations_ = []
-
-    for id, dfa in df.groupby("annotator"):
-        intervals = dfa[["onset", "offset"]].values
-        label = dfa["event_label"].tolist()
-
-        events = annotations.Events(
-            intervals=intervals,
-            intervals_unit="seconds",
-            labels=label,
-            labels_unit="open",
-            confidence=np.ones((len(label),)),
-        )
-
-        annotators.append(f"{id:02d}")
-        annotations_.append(events)
-
-    return annotations.MultiAnnotator(annotators=annotators, annotations=annotations_)
+    pass
 
 
 @io.coerce_to_bytes_io
@@ -338,8 +304,7 @@ def load_audio(fhandle):
     Returns:
         * np.ndarray - the audio signal at 44.1 kHz
     """
-    data, _ = librosa.load(fhandle, sr=44100, mono=False)
-    return data
+    pass
 
 
 @core.docstring_inherit(core.Dataset)
@@ -349,34 +314,16 @@ class Dataset(core.Dataset):
     """
 
     def __init__(self, data_home=None, version="default"):
-        super().__init__(
-            data_home,
-            version,
-            name="singapura",
-            clip_class=Clip,
-            bibtex=BIBTEX,
-            indexes=INDEXES,
-            remotes=REMOTES,
-            download_info=DOWNLOAD_INFO,
-            license_info=LICENSE_INFO,
-        )
+        raise NotImplementedError
 
     @core.copy_docs(load_audio)
     def load_audio(self, *args, **kwargs):
-        return load_audio(*args, **kwargs)
+        pass
 
     @core.copy_docs(load_annotation)
     def load_annotation(self, *args, **kwargs):
-        return load_annotation(*args, **kwargs)
+        pass
 
     @core.cached_property
     def _metadata(self):
-        metadata_path = os.path.join(self.data_home, "labelled_metadata_public.csv")
-
-        df = pd.read_csv(metadata_path)
-        df["filename"] = df["filename"].apply(lambda x: x.replace(".flac", ""))
-        df = df.set_index("filename")
-
-        metadata = df.to_dict(orient="index")
-
-        return metadata
+        pass

@@ -121,9 +121,7 @@ class Clip(core.Clip):
     """
 
     def __init__(self, clip_id, data_home, dataset_name, index, metadata):
-        super().__init__(clip_id, data_home, dataset_name, index, metadata)
-
-        self.audio_path = self.get_path("audio")
+        raise NotImplementedError
 
     @property
     def audio(self) -> Optional[Tuple[np.ndarray, float]]:
@@ -134,7 +132,7 @@ class Clip(core.Clip):
             * float - sample rate
 
         """
-        return load_audio(self.audio_path)
+        pass
 
     @property
     def item_id(self):
@@ -144,7 +142,7 @@ class Clip(core.Clip):
             * str - ID of the clip
 
         """
-        return self._clip_metadata.get("itemid")
+        pass
 
     @property
     def has_bird(self):
@@ -154,7 +152,7 @@ class Clip(core.Clip):
             * str - 1/0 depending on whether the clip contains bird sound
 
         """
-        return self._clip_metadata.get("hasbird")
+        pass
 
 
 @io.coerce_to_bytes_io
@@ -173,8 +171,7 @@ def load_audio(fhandle: BinaryIO, sr=44100) -> Tuple[np.ndarray, float]:
         * float - The sample rate of the audio file
 
     """
-    audio, sr = librosa.load(fhandle, sr=sr, mono=True)
-    return audio, sr
+    pass
 
 
 @core.docstring_inherit(core.Dataset)
@@ -184,41 +181,12 @@ class Dataset(core.Dataset):
     """
 
     def __init__(self, data_home=None, version="default"):
-        super().__init__(
-            data_home,
-            version,
-            name="warblrb10k",
-            clip_class=Clip,
-            bibtex=BIBTEX,
-            indexes=INDEXES,
-            remotes=REMOTES,
-            license_info=LICENSE_INFO,
-        )
+        raise NotImplementedError
 
     @core.copy_docs(load_audio)
     def load_audio(self, *args, **kwargs):
-        return load_audio(*args, **kwargs)
+        pass
 
     @core.cached_property
     def _metadata(self):
-        metadata_path = os.path.join(self.data_home, "warblrb10k_public_metadata.csv")
-
-        if not os.path.exists(metadata_path):
-            raise FileNotFoundError(
-                f"Metadata file not found at {metadata_path}. Did you run .download()?"
-            )
-
-        with open(metadata_path, "r") as fhandle:
-            reader = csv.reader(fhandle, delimiter=",")
-            raw_data = [line for line in reader if line[0] != "slice_file_name"]
-
-        metadata_index = {}
-        for line in raw_data:
-            clip_id = line[0].replace(".wav", "")
-
-            metadata_index[clip_id] = {
-                "itemid": line[0],
-                "hasbird": line[1],
-            }
-
-        return metadata_index
+        pass

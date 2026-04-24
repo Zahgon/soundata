@@ -196,9 +196,7 @@ class Clip(core.Clip):
     """
 
     def __init__(self, clip_id, data_home, dataset_name, index, metadata):
-        super().__init__(clip_id, data_home, dataset_name, index, metadata)
-
-        self.audio_path = self.get_path("audio")
+        raise NotImplementedError
 
     @property
     def audio(self) -> Optional[Tuple[np.ndarray, float]]:
@@ -209,7 +207,7 @@ class Clip(core.Clip):
             * float - sample rate
 
         """
-        return load_audio(self.audio_path)
+        pass
 
     @property
     def slice_file_name(self):
@@ -219,7 +217,7 @@ class Clip(core.Clip):
             * str - The name of the audio file. The name takes the following format: [fsID]-[classID]-[occurrenceID]-[sliceID].wav
 
         """
-        return self._clip_metadata.get("slice_file_name")
+        pass
 
     @property
     def freesound_id(self):
@@ -229,7 +227,7 @@ class Clip(core.Clip):
             * str - ID of the freesound.org recording from which this clip was taken
 
         """
-        return self._clip_metadata.get("freesound_id")
+        pass
 
     @property
     def freesound_start_time(self):
@@ -239,7 +237,7 @@ class Clip(core.Clip):
             * float - start time in seconds of the clip in the original freesound recording
 
         """
-        return self._clip_metadata.get("freesound_start_time")
+        pass
 
     @property
     def freesound_end_time(self):
@@ -249,7 +247,7 @@ class Clip(core.Clip):
             * float - end time in seconds of the clip in the original freesound recording
 
         """
-        return self._clip_metadata.get("freesound_end_time")
+        pass
 
     @property
     def salience(self):
@@ -259,7 +257,7 @@ class Clip(core.Clip):
             * int - annotator estimate of class sailence in the clip: 1 = foreground, 2 = background
 
         """
-        return self._clip_metadata.get("salience")
+        pass
 
     @property
     def fold(self):
@@ -269,7 +267,7 @@ class Clip(core.Clip):
             * int - fold number (1-10) to which this clip is allocated. Use these folds for cross validation
 
         """
-        return self._clip_metadata.get("fold")
+        pass
 
     @property
     def class_id(self):
@@ -279,7 +277,7 @@ class Clip(core.Clip):
             * int - integer representation of the class label (0-9). See Dataset Info in the documentation for mapping
 
         """
-        return self._clip_metadata.get("class_id")
+        pass
 
     @property
     def class_label(self):
@@ -289,7 +287,7 @@ class Clip(core.Clip):
             * str - string class name: air_conditioner, car_horn, children_playing, dog_bark, drilling, engine_idling, gun_shot, jackhammer, siren, street_music
 
         """
-        return self._clip_metadata.get("class_label")
+        pass
 
     @property
     def tags(self):
@@ -299,9 +297,7 @@ class Clip(core.Clip):
             * annotations.Tags - tag (label) of the clip + confidence. In UrbanSound8K every clip has one tag
 
         """
-        return annotations.Tags(
-            [self._clip_metadata.get("class_label")], "open", np.array([1.0])
-        )
+        pass
 
 
 @io.coerce_to_bytes_io
@@ -320,8 +316,7 @@ def load_audio(fhandle: BinaryIO, sr=44100) -> Tuple[np.ndarray, float]:
         * float - The sample rate of the audio file
 
     """
-    audio, sr = librosa.load(fhandle, sr=sr, mono=True)
-    return audio, sr
+    pass
 
 
 @core.docstring_inherit(core.Dataset)
@@ -331,48 +326,12 @@ class Dataset(core.Dataset):
     """
 
     def __init__(self, data_home=None, version="default"):
-        super().__init__(
-            data_home,
-            version,
-            name="urbansound8k",
-            clip_class=Clip,
-            bibtex=BIBTEX,
-            indexes=INDEXES,
-            remotes=REMOTES,
-            license_info=LICENSE_INFO,
-        )
+        raise NotImplementedError
 
     @core.copy_docs(load_audio)
     def load_audio(self, *args, **kwargs):
-        return load_audio(*args, **kwargs)
+        pass
 
     @core.cached_property
     def _metadata(self):
-        metadata_path = os.path.join(self.data_home, "metadata", "UrbanSound8K.csv")
-
-        if not os.path.exists(metadata_path):
-            raise FileNotFoundError("Metadata not found. Did you run .download()?")
-
-        with open(metadata_path, "r") as fhandle:
-            reader = csv.reader(fhandle, delimiter=",")
-            raw_data = []
-            for line in reader:
-                if line[0] != "slice_file_name":
-                    raw_data.append(line)
-
-        metadata_index = {}
-        for line in raw_data:
-            clip_id = line[0].replace(".wav", "")
-
-            metadata_index[clip_id] = {
-                "slice_file_name": line[0],
-                "freesound_id": line[1],
-                "freesound_start_time": float(line[2]),
-                "freesound_end_time": float(line[3]),
-                "salience": int(line[4]),
-                "fold": int(line[5]),
-                "class_id": int(line[6]),
-                "class_label": line[7],
-            }
-
-        return metadata_index
+        pass

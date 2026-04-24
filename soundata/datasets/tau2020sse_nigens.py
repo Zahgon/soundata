@@ -163,17 +163,7 @@ class Clip(core.Clip):
     """
 
     def __init__(self, clip_id, data_home, dataset_name, index, metadata):
-        super().__init__(
-            clip_id,
-            data_home,
-            dataset_name,
-            index,
-            metadata,
-        )
-
-        self.audio_path = self.get_path("audio")
-        self.csv_path = self.get_path("events")
-        self.format = self._clip_metadata.get("format")
+        raise NotImplementedError
 
     @property
     def audio(self) -> Optional[Tuple[np.ndarray, float]]:
@@ -182,7 +172,7 @@ class Clip(core.Clip):
             * np.ndarray - audio signal
             * float - sample rate
         """
-        return load_audio(self.audio_path)
+        pass
 
     @core.cached_property
     def spatial_events(self) -> Optional[annotations.SpatialEvents]:
@@ -208,7 +198,7 @@ class Clip(core.Clip):
                 * clip_number_indices (list): list of clip number indices (as strings)
                 * confidence (np.ndarray or None): array of confidence values
         """
-        return load_spatialevents(self.csv_path)
+        pass
 
 
 @io.coerce_to_bytes_io
@@ -224,8 +214,7 @@ def load_audio(fhandle: BinaryIO, sr=24000) -> Tuple[np.ndarray, float]:
         * np.ndarray - the audio signal
         * float - The sample rate of the audio file
     """
-    audio, sr = librosa.load(fhandle, sr=sr, mono=False)
-    return audio, sr
+    pass
 
 
 @io.coerce_to_string_io
@@ -240,152 +229,7 @@ def load_spatialevents(fhandle: TextIO, dt=0.1) -> annotations.SpatialEvents:
     Returns:
         SpatialEvents: sound spatial events annotation data
     """
-
-    def _process_raw_events(raw_reader, dt):
-        # unpack columns in csv
-        time_frames, labels, event_num, azimuths, elevations = list(
-            map(list, zip(*raw_reader))
-        )
-
-        # find unique label+event_num pairs
-        # processing as dictionary to preserve order
-        unique_events_set = list({l_e: None for l_e in zip(labels, event_num)})
-
-        # find all the indices of each unique label+event_num pair
-        unique_events_indices = [
-            (np.array(list(zip(labels, event_num))) == event).all(axis=1).nonzero()[0]
-            for event in unique_events_set
-        ]
-
-        # get sets of continuous indices for each unique label+event_num pair
-        unique_events_indices_grouped = [
-            np.split(
-                event_indices,
-                np.where(np.diff(np.array(time_frames)[event_indices]) != 1)[0] + 1,
-            )
-            for event_indices in unique_events_indices
-        ]
-
-        # get start_time end_time pairs for all events
-        intervals = [
-            [
-                np.round(
-                    np.array(
-                        [
-                            np.array(time_frames)[indices_grouped[0]],
-                            np.array(time_frames)[indices_grouped[-1]],
-                        ]
-                    )
-                    * dt,
-                    decimals=1,
-                )
-                for indices_grouped in unique_event_indices_grouped
-            ]
-            for unique_event_indices_grouped in unique_events_indices_grouped
-        ]
-
-        # get azimuth arrays for all event instances
-        azimuths = [
-            [
-                np.array(azimuths)[indices_grouped]
-                for indices_grouped in unique_event_indices_grouped
-            ]
-            for unique_event_indices_grouped in unique_events_indices_grouped
-        ]
-
-        # get elevations arrays for all event instances
-        elevations = [
-            [
-                np.array(elevations)[indices_grouped]
-                for indices_grouped in unique_event_indices_grouped
-            ]
-            for unique_event_indices_grouped in unique_events_indices_grouped
-        ]
-
-        # keep only one value if the event is static
-        azimuths_elevations = [
-            [
-                (
-                    np.array([azimuth[0], elevation[0]])
-                    if (azimuth == azimuth[0]).all()
-                    and (elevation == elevation[0]).all()
-                    else np.concatenate(
-                        [azimuth[:, np.newaxis], elevation[:, np.newaxis]], axis=1
-                    )
-                )
-                for azimuth, elevation in zip(event_azimuths, event_elevations)
-            ]
-            for event_azimuths, event_elevations in zip(azimuths, elevations)
-        ]
-
-        # separate azimuths and elevations again
-        azimuths = [
-            [
-                (
-                    azimuth_elevation[:, 0]
-                    if len(azimuth_elevation.shape) == 2
-                    else np.array([azimuth_elevation[0]])
-                )
-                for azimuth_elevation in event_azimuths_elevations
-            ]
-            for event_azimuths_elevations in azimuths_elevations
-        ]
-        elevations = [
-            [
-                (
-                    azimuth_elevation[:, 1]
-                    if len(azimuth_elevation.shape) == 2
-                    else np.array([azimuth_elevation[1]])
-                )
-                for azimuth_elevation in event_azimuths_elevations
-            ]
-            for event_azimuths_elevations in azimuths_elevations
-        ]
-
-        # list of labels and clip_number_indices in str
-        labels, clip_number_indices = list(zip(*unique_events_set))
-        labels = [str(l) for l in labels]
-        clip_number_indices = [str(l) for l in clip_number_indices]
-
-        # create dummy distances with None
-        distances = [
-            [np.array([None] * len(azimuth)) for azimuth in event_azimuths]
-            for event_azimuths in azimuths
-        ]
-
-        return intervals, labels, clip_number_indices, azimuths, elevations, distances
-
-    raw_reader = csv.reader(fhandle, delimiter=",")
-    raw_events = []
-    for line in raw_reader:
-        raw_events.append([int(val) for val in line])
-    (
-        intervals,
-        labels,
-        clip_number_indices,
-        azimuths,
-        elevations,
-        distances,
-    ) = _process_raw_events(raw_events, dt)
-    confidence = np.array([1.0] * len(labels))
-
-    events_data = annotations.SpatialEvents(
-        intervals,
-        "seconds",
-        elevations,
-        "degrees",
-        azimuths,
-        "degrees",
-        distances,
-        "meters",
-        labels,
-        "open",
-        clip_number_indices,
-        dt,
-        confidence,
-    )
-
-    return events_data
+    pass
 
 
 @core.docstring_inherit(core.Dataset)
@@ -393,38 +237,13 @@ class Dataset(core.Dataset):
     """The TAU NIGENS SSE 2020 dataset"""
 
     def __init__(self, data_home=None, version="default"):
-        super().__init__(
-            data_home,
-            version,
-            name="tau2020sse_nigens",
-            clip_class=Clip,
-            bibtex=BIBTEX,
-            indexes=INDEXES,
-            remotes=REMOTES,
-            license_info=LICENSE_INFO,
-        )
+        raise NotImplementedError
 
     @core.copy_docs(load_audio)
     def load_audio(self, *args, **kwargs):
-        return load_audio(*args, **kwargs)
+        pass
 
     @core.cached_property
     def _metadata(self):
         # parsing the data from the filenames due to lack of metadata file
-        metadata_index = {}
-
-        with open(self.index_path) as f:
-            taunigenssse2020_index = json.load(f)
-            all_paths_filenames = list(taunigenssse2020_index["clips"].keys())
-
-        for path_filename in all_paths_filenames:
-            clip_id = path_filename
-            path, filename = path_filename.split("/")
-            fmt, subset = path.split("_")
-
-            metadata_index[clip_id] = {
-                "format": fmt,
-                "set": subset,
-            }
-
-        return metadata_index
+        pass
